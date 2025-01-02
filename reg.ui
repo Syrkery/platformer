@@ -158,7 +158,7 @@ p, li { white-space: pre-wrap; }
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton">
+   <widget class="QPushButton" name="Back">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -176,7 +176,7 @@ p, li { white-space: pre-wrap; }
      <string>Back</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_2">
+   <widget class="QPushButton" name="Confirm">
     <property name="geometry">
      <rect>
       <x>160</x>
