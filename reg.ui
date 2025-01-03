@@ -194,7 +194,7 @@ p, li { white-space: pre-wrap; }
      <string>Confirm</string>
     </property>
    </widget>
-   <widget class="QTextBrowser" name="textBrowser_6">
+   <widget class="QTextBrowser" name="problems">
     <property name="geometry">
      <rect>
       <x>20</x>
