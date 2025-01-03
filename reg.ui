@@ -120,7 +120,7 @@ p, li { white-space: pre-wrap; }
      </rect>
     </property>
    </widget>
-   <widget class="QPlainTextEdit" name="pass">
+   <widget class="QPlainTextEdit" name="pas">
     <property name="geometry">
      <rect>
       <x>160</x>
