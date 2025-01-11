@@ -1,5 +1,5 @@
 from PyQt6 import uic
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QTextBrowser
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QTextBrowser, QLabel, QPushButton
 import sys, sqlite3
 
 
@@ -116,49 +116,38 @@ class log(QMainWindow):
         self.pl_name = self.findChild(QPlainTextEdit, 'player_name')
         self.mail = self.findChild(QPlainTextEdit, 'email')
         self.password = self.findChild(QPlainTextEdit, 'pass')
+        self.problems = self.findChild(QTextBrowser, 'problems')
         self.Back.clicked.connect(self.go_back)
         self.Confirm.clicked.connect(self.confirm)
 
     def confirm(self):
-        try:
-            con = sqlite3.connect('platformer.sqlite')
-            cur = con.cursor()
-            name = mail = passw = False
-            pl_name = self.pl_name.toPlainText()
-            e_mail = self.mail.toPlainText()
-            pasw = self.password.toPlainText()
-        except Exception as e:
-            print(e)
+        con = sqlite3.connect('platformer.sqlite')
+        cur = con.cursor()
+
+        pl_name = self.pl_name.toPlainText()
+        e_mail = self.mail.toPlainText()
+        pasw = self.password.toPlainText()
 
         try:
-            name_check = cur.execute("SELECT name FROM players").fetchall()
-            email_check = cur.execute("SELECT email FROM players WHERE name = ?", (pl_name,)).fetchall()
-            pasw_check = cur.execute("SELECT password FROM players WHERE name = ?", (pl_name,)).fetchall()
+            user_data = cur.execute(
+                "SELECT email, password FROM players WHERE name = ?", (pl_name,)
+            ).fetchone()
+            if not user_data:
+                self.problems.append('Invalid username.')
+                self.pl_name.clear()
+            elif user_data[0] != e_mail:
+                self.problems.append('Invalid email.')
+                self.mail.clear()
+            elif user_data[1] != pasw:
+                self.problems.append('Invalid password.')
+                self.password.clear()
+            else:
+                self.problems.append('Login successful!')
+                self.open_main_window()
         except sqlite3.Error as e:
-            self.problems.append(f"Database error: {str(e)}")
-            return
-        if (pl_name,) in name_check:
-            name = True
-        else:
-            self.problems.append('Invalid pl_name')
-            self.user_name.clear()
-
-        if (e_mail,) in email_check:
-            mail = True
-        else:
-            self.problems.append('Invalid e-mail')
-            self.email.clear()
-
-        if (pasw,) in pasw_check:
-            passw = True
-        else:
-            self.problems.append('Invalid password')
-            self.password.clear()
-
-        if name and mail and passw:
-            self.problems.append('OK!')
-            self.open_main_window()
-        con.close()
+            self.problems.append(f"Database error: {e}")
+        finally:
+            con.close()
 
     def open_main_window(self):
         self.main_window = main()
@@ -174,6 +163,86 @@ class main(QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi('main_window.ui', self)
+        try:
+            self.label = self.findChild(QLabel, 'label')
+            self.play_button = self.findChild(QPushButton, 'play')
+            self.editor_button = self.findChild(QPushButton, 'editor')
+            self.stats_button = self.findChild(QPushButton, 'stats')
+            self.levels_button = self.findChild(QPushButton, 'levels_ch')
+            self.logout_button = self.findChild(QPushButton, 'exit')
+        except Exception as e:
+            print(e)
+
+        self.play_button.clicked.connect(self.open_game_window)
+        self.editor_button.clicked.connect(self.open_editor_window)
+        self.stats_button.clicked.connect(self.open_stats_window)
+        self.levels_button.clicked.connect(self.open_levels_window)
+        self.logout_button.clicked.connect(self.logout)
+
+    def set_user(self, username):
+        self.label.setText(f"Добро пожаловать, {username}!")
+
+    def open_game_window(self):
+        self.game_window = GameWindow(self)
+        self.game_window.show()
+        self.close()
+
+    def open_editor_window(self):
+        self.editor_window = EditorWindow(self)
+        self.editor_window.show()
+        self.close()
+
+    def open_stats_window(self):
+        self.stats_window = StatsWindow(self)
+        self.stats_window.show()
+        self.close()
+
+    def open_levels_window(self):
+        self.levels_window = LevelsWindow(self)
+        self.levels_window.show()
+        self.close()
+
+    def logout(self):
+        self.login_window = Log_or_reg()
+        self.login_window.show()
+        self.close()
+
+
+class GameWindow(QMainWindow):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.setWindowTitle("Игровое окно")
+        self.setGeometry(100, 100, 800, 600)
+        self.show()
+
+
+class EditorWindow(QMainWindow):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.setWindowTitle("Редактор уровней")
+        self.setGeometry(100, 100, 800, 600)
+        self.show()
+
+
+class StatsWindow(QMainWindow):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.setWindowTitle("Статистика")
+        self.setGeometry(100, 100, 800, 600)
+        self.show()
+
+
+class LevelsWindow(QMainWindow):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+        self.setWindowTitle("Выбор уровня")
+        self.setGeometry(100, 100, 800, 600)
+        self.show()
+
 
 
 if __name__ == '__main__':
