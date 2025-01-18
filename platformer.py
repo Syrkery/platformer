@@ -1,4 +1,6 @@
+import pygame
 from PyQt6 import uic
+from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QTextBrowser, QLabel, QPushButton
 import sys, sqlite3
 
@@ -183,7 +185,7 @@ class main(QMainWindow):
         self.label.setText(f"Добро пожаловать, {username}!")
 
     def open_game_window(self):
-        self.game_window = GameWindow(self)
+        self.game_window = GameWindow()
         self.game_window.show()
         self.close()
 
@@ -209,12 +211,84 @@ class main(QMainWindow):
 
 
 class GameWindow(QMainWindow):
-    def __init__(self, parent):
+    def __init__(self):
         super().__init__()
-        self.parent = parent
-        self.setWindowTitle("Игровое окно")
-        self.setGeometry(100, 100, 800, 600)
-        self.show()
+        uic.loadUi("game.ui", self)
+        self.init_pygame()
+
+    def init_pygame(self):
+        try:
+            pygame.init()
+            self.screen = pygame.display.set_mode((800, 600))
+            self.clock = pygame.time.Clock()
+
+            self.running = True
+            self.score = 0
+            self.health = 100
+            self.time_elapsed = 0
+
+            self.timer = QTimer(self)
+            self.timer.timeout.connect(self.update_game)
+            self.timer.start(16)
+
+            self.player = pygame.Rect(400, 500, 50, 50)
+
+            self.platforms = [
+                pygame.Rect(300, 400, 200, 20),
+                pygame.Rect(500, 300, 200, 20),
+                pygame.Rect(100, 200, 200, 20)
+            ]
+
+            self.enemies = [pygame.Rect(350, 370, 40, 40)]
+
+            self.objects = [pygame.Rect(120, 180, 20, 20)]
+        except Exception as e:
+            print(e)
+
+    def update_game(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+                self.close()
+
+        if not self.running:
+            return
+
+        self.time_elapsed += 1 / 60
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:
+            self.player.move_ip(-5, 0)
+        if keys[pygame.K_RIGHT]:
+            self.player.move_ip(5, 0)
+        if keys[pygame.K_UP]:
+            self.player.move_ip(0, -5)
+        if keys[pygame.K_DOWN]:
+            self.player.move_ip(0, 5)
+
+        self.screen.fill((0, 0, 0))
+        pygame.draw.rect(self.screen, (0, 0, 255), self.player)
+        for platform in self.platforms:
+            pygame.draw.rect(self.screen, (0, 255, 0), platform)
+        for enemy in self.enemies:
+            pygame.draw.rect(self.screen, (255, 0, 0), enemy)
+        for obj in self.objects:
+            pygame.draw.rect(self.screen, (255, 255, 0), obj)
+
+        font = pygame.font.Font(None, 36)
+        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
+        health_text = font.render(f"Health: {self.health}", True, (255, 255, 255))
+        time_text = font.render(f"Time: {int(self.time_elapsed)}s", True, (255, 255, 255))
+        self.screen.blit(score_text, (10, 10))
+        self.screen.blit(health_text, (10, 50))
+        self.screen.blit(time_text, (10, 90))
+
+        pygame.display.flip()
+        self.clock.tick(60)
+
+    def closeEvent(self, event):
+        self.running = False
+        pygame.quit()
+        event.accept()
 
 
 class EditorWindow(QMainWindow):
