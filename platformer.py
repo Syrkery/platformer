@@ -256,13 +256,13 @@ class GameWindow(QMainWindow):
 
         self.time_elapsed += 1 / 60
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             self.player.move_ip(-5, 0)
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.player.move_ip(5, 0)
-        if keys[pygame.K_UP]:
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
             self.player.move_ip(0, -5)
-        if keys[pygame.K_DOWN]:
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
             self.player.move_ip(0, 5)
 
         self.screen.fill((0, 0, 0))
