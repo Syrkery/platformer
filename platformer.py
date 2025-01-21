@@ -213,7 +213,6 @@ class main(QMainWindow):
 class GameWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        uic.loadUi("game.ui", self)
         self.init_pygame()
 
     def init_pygame(self):
