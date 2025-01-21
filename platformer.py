@@ -213,36 +213,37 @@ class main(QMainWindow):
 class GameWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        uic.loadUi("game.ui", self)
         self.init_pygame()
 
     def init_pygame(self):
-        try:
-            pygame.init()
-            self.screen = pygame.display.set_mode((800, 600))
-            self.clock = pygame.time.Clock()
+        pygame.init()
+        self.screen = pygame.display.set_mode((800, 600))
+        self.clock = pygame.time.Clock()
 
-            self.running = True
-            self.score = 0
-            self.health = 100
-            self.time_elapsed = 0
+        self.running = True
+        self.score = 0
+        self.health = 100
+        self.time_elapsed = 0
 
-            self.timer = QTimer(self)
-            self.timer.timeout.connect(self.update_game)
-            self.timer.start(16)
+        self.gravity = 0.5
+        self.jump_strength = -10
+        self.player_speed = 5
+        self.on_ground = False
+        self.player_velocity = pygame.Vector2(0, 0)
 
-            self.player = pygame.Rect(400, 500, 50, 50)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_game)
+        self.timer.start(16)
 
-            self.platforms = [
-                pygame.Rect(300, 400, 200, 20),
-                pygame.Rect(500, 300, 200, 20),
-                pygame.Rect(100, 200, 200, 20)
-            ]
+        self.player = pygame.Rect(150, 500, 50, 50)
 
-            self.enemies = [pygame.Rect(350, 370, 40, 40)]
-
-            self.objects = [pygame.Rect(120, 180, 20, 20)]
-        except Exception as e:
-            print(e)
+        self.platforms = [
+            pygame.Rect(300, 500, 200, 20),
+            pygame.Rect(500, 400, 200, 20),
+            pygame.Rect(100, 350, 200, 20),
+            pygame.Rect(0, 580, 800, 20)
+        ]
 
     def update_game(self):
         for event in pygame.event.get():
@@ -255,23 +256,27 @@ class GameWindow(QMainWindow):
 
         self.time_elapsed += 1 / 60
         keys = pygame.key.get_pressed()
+
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.player.move_ip(-5, 0)
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.player.move_ip(5, 0)
-        if keys[pygame.K_UP] or keys[pygame.K_w]:
-            self.player.move_ip(0, -5)
-        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            self.player.move_ip(0, 5)
+            self.player_velocity.x = -self.player_speed
+        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            self.player_velocity.x = self.player_speed
+        else:
+            self.player_velocity.x = 0
+
+        if keys[pygame.K_SPACE] and self.on_ground:
+            self.player_velocity.y = self.jump_strength
+            self.on_ground = False
+
+        self.player_velocity.y += self.gravity
+        self.player.move_ip(self.player_velocity.x, self.player_velocity.y)
+
+        self.check_collisions()
 
         self.screen.fill((0, 0, 0))
         pygame.draw.rect(self.screen, (0, 0, 255), self.player)
         for platform in self.platforms:
             pygame.draw.rect(self.screen, (0, 255, 0), platform)
-        for enemy in self.enemies:
-            pygame.draw.rect(self.screen, (255, 0, 0), enemy)
-        for obj in self.objects:
-            pygame.draw.rect(self.screen, (255, 255, 0), obj)
 
         font = pygame.font.Font(None, 36)
         score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
@@ -284,10 +289,25 @@ class GameWindow(QMainWindow):
         pygame.display.flip()
         self.clock.tick(60)
 
+    def check_collisions(self):
+        self.on_ground = False
+        for platform in self.platforms:
+            if self.player.colliderect(platform) and self.player_velocity.y >= 0:
+                if self.player.bottom >= platform.top and self.player.bottom <= platform.top + 10:
+                    self.player.bottom = platform.top
+                    self.player_velocity.y = 0
+                    self.on_ground = True
+
+        if self.player.bottom > 600:  # Если игрок падает ниже экрана
+            self.player.bottom = 600
+            self.player_velocity.y = 0
+            self.on_ground = True
+
     def closeEvent(self, event):
         self.running = False
         pygame.quit()
         event.accept()
+
 
 
 class EditorWindow(QMainWindow):
