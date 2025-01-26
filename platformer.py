@@ -1,6 +1,7 @@
 import pygame
 import sqlite3
 
+
 class Game:
     def __init__(self):
         pygame.init()
@@ -19,16 +20,23 @@ class Game:
         self.on_ground = False
         self.player_velocity = pygame.Vector2(0, 0)
 
-        self.player = pygame.Rect(150, 500, 50, 50)
+        self.start_position = (150, 500)
+        self.player = pygame.Rect(*self.start_position, 50, 50)
 
         self.platforms = [
-            pygame.Rect(300, 500, 200, 20),
+            pygame.Rect(380, 500, 200, 20),
             pygame.Rect(500, 380, 200, 20),
             pygame.Rect(120, 330, 200, 20),
             pygame.Rect(0, 580, 800, 20),
             pygame.Rect(200, 450, 150, 20),
             pygame.Rect(400, 250, 200, 20),
             pygame.Rect(600, 175, 150, 20)
+        ]
+
+        self.spikes = [
+            pygame.Rect(390, 480, 20, 20),
+            pygame.Rect(550, 360, 20, 20),
+            pygame.Rect(250, 310, 20, 20)
         ]
 
         self.colours = [
@@ -41,13 +49,13 @@ class Game:
             (255, 0, 255)
         ]
 
-        self.font = pygame.font.Font(None, 36)
+        self.font = pygame.font.Font(pygame.font.match_font('consolas', 'monospace'), 24)
 
     def save_progress(self):
         con = sqlite3.connect('platformer.sqlite')
         cur = con.cursor()
         cur.execute(
-            "INSERT INTO results (score, health, time) VALUES (?, ?, ?)",
+            "INSERT INTO results (score, health, time_elapsed) VALUES (?, ?, ?)",
             (self.score, self.health, self.time_elapsed)
         )
         con.commit()
@@ -111,6 +119,11 @@ class Game:
             for platform in self.platforms:
                 pygame.draw.rect(self.screen, self.colours[self.platforms.index(platform)], platform)
 
+            for spike in self.spikes:
+                pygame.draw.polygon(self.screen, (255, 0, 0),
+                                    [(spike.x, spike.y + spike.height), (spike.x + spike.width // 2, spike.y),
+                                     (spike.x + spike.width, spike.y + spike.height)])
+
             score_text = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
             health_text = self.font.render(f"Health: {self.health}", True, (255, 255, 255))
             time_text = self.font.render(f"Time: {int(self.time_elapsed)}s", True, (255, 255, 255))
@@ -132,10 +145,20 @@ class Game:
                     self.player_velocity.y = 0
                     self.on_ground = True
 
+        for spike in self.spikes:
+            if self.player.colliderect(spike):
+                self.respawn_player()
+
         if self.player.bottom > 600:
             self.player.bottom = 600
             self.player_velocity.y = 0
             self.on_ground = True
+
+    def respawn_player(self):
+        self.health = 100
+        self.player.topleft = self.start_position
+        self.player_velocity = pygame.Vector2(0, 0)
+
 
 if __name__ == "__main__":
     game = Game()
