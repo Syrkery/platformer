@@ -1,224 +1,11 @@
 import pygame
-from PyQt6 import uic
-from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPlainTextEdit, QTextBrowser, QLabel, QPushButton
-import sys, sqlite3
+import sqlite3
 
-
-class Log_or_reg(QMainWindow):
+class Game:
     def __init__(self):
-        super().__init__()
-        uic.loadUi('log_or_reg.ui', self)
-        self.Yes.clicked.connect(self.log)
-        self.No.clicked.connect(self.reg)
-
-    def log(self):
-        self.log_window = log(self)
-        self.log_window.show()
-        self.close()
-
-    def reg(self):
-        self.reg_window = reg(self)
-        self.reg_window.show()
-        self.close()
-
-
-class reg(QMainWindow):
-    def __init__(self, parent):
-        super().__init__()
-        self.parent = parent
-        uic.loadUi('reg.ui', self)
-        self.pl_name = self.findChild(QPlainTextEdit, 'player_name')
-        self.mail = self.findChild(QPlainTextEdit, 'email')
-        self.password = self.findChild(QPlainTextEdit, 'pass')
-        self.rep_password = self.findChild(QPlainTextEdit, 'pass_rep')
-        self.problems = self.findChild(QTextBrowser, 'problems')
-        self.Back.clicked.connect(self.go_back)
-        self.Confirm.clicked.connect(self.confirm)
-
-    def confirm(self):
-        con = sqlite3.connect('platformer.sqlite')
-        cur = con.cursor()
-        player_name = self.player_name.toPlainText()
-        email = self.email.toPlainText()
-        password = self.pas.toPlainText()
-        pass_rep = self.pass_rep.toPlainText()
-
-        def pass_check(parol, rep):
-            up = sym = num = 0
-            if len(parol) < 8:
-                self.problems.append('Password must be at least 8 characters.')
-            if parol != rep:
-                self.problems.append("Passwords do not match.")
-            for i in parol:
-                if i.isdigit():
-                    num += 1
-                elif i.isupper():
-                    up += 1
-                elif not i.isalnum():
-                    sym += 1
-            if up < 1:
-                self.problems.append('Password must contain at least 1 uppercase letter.')
-            if sym < 1:
-                self.problems.append('Password must contain at least 1 special character.')
-            if num < 1:
-                self.problems.append('Password must contain at least 1 number.')
-            return all([len(parol) >= 8, parol == rep, up >= 1, sym >= 1, num >= 1])
-
-        try:
-            name_check = [row[0] for row in cur.execute("SELECT name FROM players").fetchall()]
-            email_check = [row[0] for row in cur.execute("SELECT email FROM players").fetchall()]
-        except sqlite3.Error as e:
-            print(e)
-
-        try:
-            name_ch = player_name not in name_check
-            email_ch = email not in email_check
-            pass_valid = pass_check(password, pass_rep)
-        except Exception as e:
-            print(e)
-
-        try:
-            if name_ch and email_ch and pass_valid:
-                try:
-                    cur.execute(
-                        "INSERT INTO players (name, email, password, score) VALUES (?, ?, ?, ?)",
-                        (player_name, email, password, 0)
-                    )
-                    con.commit()
-                    self.problems.append('Registration successful!')
-                    self.open_main_window()
-                except sqlite3.Error as e:
-                    self.problems.append(f"Database error: {e}")
-            else:
-                if not name_ch:
-                    self.problems.append("Username already exists.")
-                if not email_ch:
-                    self.problems.append("Email already exists.")
-        except Exception as e:
-            print(e)
-
-        con.close()
-
-    def open_main_window(self):
-        self.main_window = main()
-        self.main_window.show()
-        self.close()
-
-    def go_back(self):
-        self.parent.show()
-        self.close()
-
-
-class log(QMainWindow):
-    def __init__(self, parent):
-        super().__init__()
-        self.parent = parent
-        uic.loadUi('log.ui', self)
-        self.pl_name = self.findChild(QPlainTextEdit, 'player_name')
-        self.mail = self.findChild(QPlainTextEdit, 'email')
-        self.password = self.findChild(QPlainTextEdit, 'pass')
-        self.problems = self.findChild(QTextBrowser, 'problems')
-        self.Back.clicked.connect(self.go_back)
-        self.Confirm.clicked.connect(self.confirm)
-
-    def confirm(self):
-        con = sqlite3.connect('platformer.sqlite')
-        cur = con.cursor()
-
-        pl_name = self.pl_name.toPlainText()
-        e_mail = self.mail.toPlainText()
-        pasw = self.password.toPlainText()
-
-        try:
-            user_data = cur.execute(
-                "SELECT email, password FROM players WHERE name = ?", (pl_name,)
-            ).fetchone()
-            if not user_data:
-                self.problems.append('Invalid username.')
-                self.pl_name.clear()
-            elif user_data[0] != e_mail:
-                self.problems.append('Invalid email.')
-                self.mail.clear()
-            elif user_data[1] != pasw:
-                self.problems.append('Invalid password.')
-                self.password.clear()
-            else:
-                self.problems.append('Login successful!')
-                self.open_main_window()
-        except sqlite3.Error as e:
-            self.problems.append(f"Database error: {e}")
-        finally:
-            con.close()
-
-    def open_main_window(self):
-        self.main_window = main()
-        self.main_window.show()
-        self.close()
-
-    def go_back(self):
-        self.parent.show()
-        self.close()
-
-
-class main(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        uic.loadUi('main_window.ui', self)
-        try:
-            self.label = self.findChild(QLabel, 'label')
-            self.play_button = self.findChild(QPushButton, 'play')
-            self.editor_button = self.findChild(QPushButton, 'editor')
-            self.stats_button = self.findChild(QPushButton, 'stats')
-            self.levels_button = self.findChild(QPushButton, 'levels_ch')
-            self.logout_button = self.findChild(QPushButton, 'exit')
-        except Exception as e:
-            print(e)
-
-        self.play_button.clicked.connect(self.open_game_window)
-        self.editor_button.clicked.connect(self.open_editor_window)
-        self.stats_button.clicked.connect(self.open_stats_window)
-        self.levels_button.clicked.connect(self.open_levels_window)
-        self.logout_button.clicked.connect(self.logout)
-
-    def set_user(self, username):
-        self.label.setText(f"Добро пожаловать, {username}!")
-
-    def open_game_window(self):
-        self.game_window = GameWindow()
-        self.game_window.show()
-        self.close()
-
-    def open_editor_window(self):
-        self.editor_window = EditorWindow(self)
-        self.editor_window.show()
-        self.close()
-
-    def open_stats_window(self):
-        self.stats_window = StatsWindow(self)
-        self.stats_window.show()
-        self.close()
-
-    def open_levels_window(self):
-        self.levels_window = LevelsWindow(self)
-        self.levels_window.show()
-        self.close()
-
-    def logout(self):
-        self.login_window = Log_or_reg()
-        self.login_window.show()
-        self.close()
-
-
-class GameWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        uic.loadUi("game.ui", self)
-        self.init_pygame()
-
-    def init_pygame(self):
         pygame.init()
         self.screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption("Platformer Game")
         self.clock = pygame.time.Clock()
 
         self.running = True
@@ -232,62 +19,109 @@ class GameWindow(QMainWindow):
         self.on_ground = False
         self.player_velocity = pygame.Vector2(0, 0)
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_game)
-        self.timer.start(16)
-
         self.player = pygame.Rect(150, 500, 50, 50)
 
         self.platforms = [
             pygame.Rect(300, 500, 200, 20),
-            pygame.Rect(500, 400, 200, 20),
-            pygame.Rect(100, 350, 200, 20),
-            pygame.Rect(0, 580, 800, 20)
+            pygame.Rect(500, 380, 200, 20),
+            pygame.Rect(120, 330, 200, 20),
+            pygame.Rect(0, 580, 800, 20),
+            pygame.Rect(200, 450, 150, 20),
+            pygame.Rect(400, 250, 200, 20),
+            pygame.Rect(600, 175, 150, 20)
         ]
 
-    def update_game(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-                self.close()
+        self.colours = [
+            (180, 180, 180),
+            (255, 255, 255),
+            (0, 0, 255),
+            (255, 0, 0),
+            (0, 255, 0),
+            (0, 0, 255),
+            (255, 0, 255)
+        ]
 
-        if not self.running:
-            return
+        self.font = pygame.font.Font(None, 36)
 
-        self.time_elapsed += 1 / 60
-        keys = pygame.key.get_pressed()
+    def save_progress(self):
+        con = sqlite3.connect('platformer.sqlite')
+        cur = con.cursor()
+        cur.execute(
+            "INSERT INTO results (score, health, time) VALUES (?, ?, ?)",
+            (self.score, self.health, self.time_elapsed)
+        )
+        con.commit()
+        con.close()
 
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.player_velocity.x = -self.player_speed
-        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.player_velocity.x = self.player_speed
-        else:
-            self.player_velocity.x = 0
-
-        if keys[pygame.K_SPACE] and self.on_ground:
-            self.player_velocity.y = self.jump_strength
-            self.on_ground = False
-
-        self.player_velocity.y += self.gravity
-        self.player.move_ip(self.player_velocity.x, self.player_velocity.y)
-
-        self.check_collisions()
+    def show_results(self):
+        con = sqlite3.connect('platformer.sqlite')
+        cur = con.cursor()
+        results = cur.execute("SELECT * FROM results ORDER BY id DESC").fetchall()
+        con.close()
 
         self.screen.fill((0, 0, 0))
-        pygame.draw.rect(self.screen, (0, 0, 255), self.player)
-        for platform in self.platforms:
-            pygame.draw.rect(self.screen, (0, 255, 0), platform)
+        y_offset = 50
 
-        font = pygame.font.Font(None, 36)
-        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
-        health_text = font.render(f"Health: {self.health}", True, (255, 255, 255))
-        time_text = font.render(f"Time: {int(self.time_elapsed)}s", True, (255, 255, 255))
-        self.screen.blit(score_text, (10, 10))
-        self.screen.blit(health_text, (10, 50))
-        self.screen.blit(time_text, (10, 90))
+        header = "{:<5} {:<10} {:<10} {:<10}".format("ID", "Score", "Health", "Time")
+        header_surface = self.font.render(header, True, (255, 255, 255))
+        self.screen.blit(header_surface, (50, 10))
+
+        for row in results[:10]:
+            result_text = "{:<5} {:<10} {:<10} {:<10.2f}".format(row[0], row[1], row[2], row[3])
+            result_surface = self.font.render(result_text, True, (255, 255, 255))
+            self.screen.blit(result_surface, (50, y_offset))
+            y_offset += 40
 
         pygame.display.flip()
-        self.clock.tick(60)
+        pygame.time.wait(5000)
+
+    def game_loop(self):
+        while self.running:
+            self.time_elapsed += self.clock.tick(60) / 1000
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+
+            keys = pygame.key.get_pressed()
+
+            if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+                self.player_velocity.x = -self.player_speed
+            elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+                self.player_velocity.x = self.player_speed
+            else:
+                self.player_velocity.x = 0
+
+            if keys[pygame.K_SPACE] and self.on_ground:
+                self.player_velocity.y = self.jump_strength
+                self.on_ground = False
+
+            if keys[pygame.K_s]:
+                self.save_progress()
+
+            if keys[pygame.K_r]:
+                self.show_results()
+
+            self.player_velocity.y += self.gravity
+            self.player.move_ip(self.player_velocity.x, self.player_velocity.y)
+
+            self.check_collisions()
+
+            self.screen.fill((0, 0, 0))
+            pygame.draw.rect(self.screen, (0, 0, 255), self.player)
+            for platform in self.platforms:
+                pygame.draw.rect(self.screen, self.colours[self.platforms.index(platform)], platform)
+
+            score_text = self.font.render(f"Score: {self.score}", True, (255, 255, 255))
+            health_text = self.font.render(f"Health: {self.health}", True, (255, 255, 255))
+            time_text = self.font.render(f"Time: {int(self.time_elapsed)}s", True, (255, 255, 255))
+
+            self.screen.blit(score_text, (10, 10))
+            self.screen.blit(health_text, (10, 50))
+            self.screen.blit(time_text, (10, 90))
+
+            pygame.display.flip()
+
+        pygame.quit()
 
     def check_collisions(self):
         self.on_ground = False
@@ -298,48 +132,11 @@ class GameWindow(QMainWindow):
                     self.player_velocity.y = 0
                     self.on_ground = True
 
-        if self.player.bottom > 600:  # Если игрок падает ниже экрана
+        if self.player.bottom > 600:
             self.player.bottom = 600
             self.player_velocity.y = 0
             self.on_ground = True
 
-    def closeEvent(self, event):
-        self.running = False
-        pygame.quit()
-        event.accept()
-
-
-
-class EditorWindow(QMainWindow):
-    def __init__(self, parent):
-        super().__init__()
-        self.parent = parent
-        self.setWindowTitle("Редактор уровней")
-        self.setGeometry(100, 100, 800, 600)
-        self.show()
-
-
-class StatsWindow(QMainWindow):
-    def __init__(self, parent):
-        super().__init__()
-        self.parent = parent
-        self.setWindowTitle("Статистика")
-        self.setGeometry(100, 100, 800, 600)
-        self.show()
-
-
-class LevelsWindow(QMainWindow):
-    def __init__(self, parent):
-        super().__init__()
-        self.parent = parent
-        self.setWindowTitle("Выбор уровня")
-        self.setGeometry(100, 100, 800, 600)
-        self.show()
-
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    main_window = Log_or_reg()
-    main_window.show()
-    sys.exit(app.exec())
+if __name__ == "__main__":
+    game = Game()
+    game.game_loop()
