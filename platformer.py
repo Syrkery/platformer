@@ -27,16 +27,19 @@ class Game:
             pygame.Rect(380, 500, 200, 20),
             pygame.Rect(500, 380, 200, 20),
             pygame.Rect(120, 330, 200, 20),
-            pygame.Rect(0, 580, 800, 20),
             pygame.Rect(200, 450, 150, 20),
             pygame.Rect(400, 250, 200, 20),
-            pygame.Rect(600, 175, 150, 20)
+            pygame.Rect(500, 125, 150, 20),
+            pygame.Rect(250, 175, 100, 20)
         ]
 
         self.spikes = [
-            pygame.Rect(390, 480, 20, 20),
+            pygame.Rect(380, 480, 20, 20),
             pygame.Rect(550, 360, 20, 20),
-            pygame.Rect(250, 310, 20, 20)
+            pygame.Rect(250, 310, 20, 20),
+            pygame.Rect(560, 230, 20, 20),
+            pygame.Rect(520, 230, 20, 20),
+            pygame.Rect(480, 230, 20, 20)
         ]
 
         self.colours = [
