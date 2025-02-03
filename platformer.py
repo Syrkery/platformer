@@ -10,9 +10,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.running = True
-        self.score = 0
-        self.health = 100
-        self.time_elapsed = 0
+        self.load_progress()
 
         self.gravity = 0.5
         self.jump_strength = -10
@@ -48,17 +46,27 @@ class Game:
             (0, 0, 255),
             (255, 0, 0),
             (0, 255, 0),
-            (0, 0, 255),
+            (251, 85, 1),
             (255, 0, 255)
         ]
 
         self.font = pygame.font.Font(pygame.font.match_font('consolas', 'monospace'), 24)
 
+    def load_progress(self):
+        con = sqlite3.connect('platformer.sqlite')
+        cur = con.cursor()
+        result = cur.execute("SELECT score, health, time FROM results ORDER BY id DESC LIMIT 1").fetchone()
+        con.close()
+        if result:
+            self.score, self.health, self.time_elapsed = result
+        else:
+            self.score, self.health, self.time_elapsed = 0, 100, 0
+
     def save_progress(self):
         con = sqlite3.connect('platformer.sqlite')
         cur = con.cursor()
         cur.execute(
-            "INSERT INTO results (score, health, time_elapsed) VALUES (?, ?, ?)",
+            "INSERT INTO results (score, health, time) VALUES (?, ?, ?)",
             (self.score, self.health, self.time_elapsed)
         )
         con.commit()
