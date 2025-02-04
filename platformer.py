@@ -21,34 +21,7 @@ class Game:
         self.start_position = (150, 500)
         self.player = pygame.Rect(*self.start_position, 50, 50)
 
-        self.platforms = [
-            pygame.Rect(380, 500, 200, 20),
-            pygame.Rect(500, 380, 200, 20),
-            pygame.Rect(120, 330, 200, 20),
-            pygame.Rect(200, 450, 150, 20),
-            pygame.Rect(400, 250, 200, 20),
-            pygame.Rect(500, 125, 150, 20),
-            pygame.Rect(250, 175, 100, 20)
-        ]
-
-        self.spikes = [
-            pygame.Rect(380, 480, 20, 20),
-            pygame.Rect(550, 360, 20, 20),
-            pygame.Rect(250, 310, 20, 20),
-            pygame.Rect(560, 230, 20, 20),
-            pygame.Rect(520, 230, 20, 20),
-            pygame.Rect(480, 230, 20, 20)
-        ]
-
-        self.colours = [
-            (180, 180, 180),
-            (255, 255, 255),
-            (0, 0, 255),
-            (255, 0, 0),
-            (0, 255, 0),
-            (251, 85, 1),
-            (255, 0, 255)
-        ]
+        self.load_level()
 
         self.font = pygame.font.Font(pygame.font.match_font('consolas', 'monospace'), 24)
 
@@ -71,6 +44,15 @@ class Game:
         )
         con.commit()
         con.close()
+
+    def load_level(self):
+        level_file = f"level_{(self.score // 200) + 1}.txt"
+        with open(level_file, "r") as f:
+            lines = f.readlines()
+
+        self.platforms = [pygame.Rect(*map(int, line.split())) for line in lines[0].split(";") if line]
+        self.spikes = [pygame.Rect(*map(int, line.split())) for line in lines[1].split(";") if line]
+        self.colours = [tuple(map(int, line.split())) for line in lines[2].split(";") if line]
 
     def show_results(self):
         con = sqlite3.connect('platformer.sqlite')
@@ -159,6 +141,8 @@ class Game:
         for spike in self.spikes:
             if self.player.colliderect(spike):
                 self.respawn_player()
+                if self.score > 0:
+                    self.score -= 10
 
         if self.player.bottom > 600:
             self.player.bottom = 600
