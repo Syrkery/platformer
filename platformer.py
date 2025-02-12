@@ -84,8 +84,8 @@ class Game:
     def save_progress(self):
         con = sqlite3.connect('platformer.sqlite')
         cur = con.cursor()
-        cur.execute("INSERT INTO results (score, health, time) VALUES (?, ?, ?)",
-                    (self.score, self.health, self.time_elapsed))
+        cur.execute("INSERT INTO results (score, health, time, jumps, dies) VALUES (?, ?, ?, ?, ?)",
+                    (self.score, self.health, self.time_elapsed, self.jump, self.die))
         con.commit()
         con.close()
 
