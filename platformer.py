@@ -73,13 +73,13 @@ class Game:
         con = sqlite3.connect('platformer.sqlite')
         cur = con.cursor()
         cur.execute('''CREATE TABLE IF NOT EXISTS results 
-                     (id INTEGER PRIMARY KEY, score INT, health INT, time REAL)''')
-        result = cur.execute("SELECT score, health, time FROM results ORDER BY id DESC LIMIT 1").fetchone()
+                     (id INTEGER PRIMARY KEY, score INT, health INT, time REAL, jumps INT, dies INT)''')
+        result = cur.execute("SELECT score, health, time, jumps, dies FROM results ORDER BY id DESC LIMIT 1").fetchone()
         con.close()
         if result:
-            self.score, self.health, self.time_elapsed = result
+            self.score, self.health, self.time_elapsed, self.jump, self.die = result
         else:
-            self.score, self.health, self.time_elapsed = 0, 100, 0
+            self.score, self.health, self.time_elapsed, self.jump, self.die = 0, 100, 0, 0, 0
 
     def save_progress(self):
         con = sqlite3.connect('platformer.sqlite')
@@ -150,6 +150,7 @@ class Game:
             if keys[pygame.K_SPACE] and self.on_ground:
                 self.player_velocity.y = self.jump_strength
                 self.on_ground = False
+                self.jump += 1
 
             if keys[pygame.K_q]:
                 self.save_progress()
@@ -210,6 +211,7 @@ class Game:
                 self.resp()
                 if self.health <= 0:
                     self.respawn_player()
+                    self.die += 1
 
         for coin in self.coins[:]:
             if self.player.colliderect(coin):
